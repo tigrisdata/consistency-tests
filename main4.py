@@ -38,7 +38,7 @@ for i in range(iterations):
     with open(file_path, "wb") as f:
         f.write(os.urandom(file_size_bytes))
     put_url = f"{endpoint}/{bucket}/{object_key}"
-    get_url = f"{put_url}?nocache={uuid.uuid4()}"
+    get_url = f"{put_url}"
     # ---------- PUT to Region A (SJC) ----------
     put_headers = {
         "X-Tigris-Regions": region_put,

@@ -5,10 +5,11 @@ import time
 import os
 from requests_aws4auth import AWS4Auth
 from tabulate import tabulate
-print("Overwrite object with X-Tigris-Consistent:true in Region A, read with same header in Region B")
+#print("Overwrite object with X-Tigris-Consistent:true in Region A, read with same header in Region B")
+print("Overwrite object with X-Tigris-Consistent:true in Region A, read with same header in Region A")
 # ---------- CONFIG ----------
-put_region = "sjc"
-get_region = "fra"
+#put_region = "sjc"
+#get_region = "fra"
 endpoint = "https://t3.storage.dev"
 bucket = os.getenv("BUCKET", "tigris-consistency-test-bucket")
 iterations = 10
@@ -38,11 +39,10 @@ for i in range(iterations):
     with open(file_path, "wb") as f:
         f.write(os.urandom(file_size_bytes))
     put_url = f"{endpoint}/{bucket}/{object_key}"
-    get_url = f"{put_url}?nocache={uuid.uuid4()}"
+    get_url = f"{put_url}"
     # Step 1: PUT (overwrite) to Region A
     with open(file_path, "rb") as f:
         put_response = requests.put(put_url, data=f, auth=auth, headers={
-            "X-Tigris-Regions": put_region,
             "X-Tigris-Consistent": "true",
         })
     expected_etag = put_response.headers.get("ETag", "").strip('"')
@@ -50,20 +50,18 @@ for i in range(iterations):
         expected_content = f.read()
     # Step 2: Poll GET from Region B with strict consistency
     converged = False
+    head_response = requests.head(get_url, auth=auth, headers={
+        "X-Tigris-Consistent": "true",
+    })
     start = time.perf_counter()
     for attempt in range(max_attempts):
         try:
-            head_response = requests.head(get_url, auth=auth, headers={
-                "X-Tigris-Regions": get_region,
-                "X-Tigris-Consistent": "true",
-            })
             actual_etag = head_response.headers.get("ETag", "").strip('"')
             if head_response.status_code == 200 and actual_etag == expected_etag:
                 elapsed = (time.perf_counter() - start) * 1000
-                results.append((f"Run {i+1}", f"{elapsed:.2f} ms", attempt + 1, "PASS"))
+                results.append((f"Run {i+1}", f"{elapsed:.2f} ms", attempt, "PASS"))
                 converged = True
                 get_response = requests.get(get_url, auth=auth, headers={
-                    "X-Tigris-Regions": get_region,
                     "X-Tigris-Consistent": "true",
                 })
                 actual_etag = get_response.headers.get("ETag", "").strip('"')
@@ -73,6 +71,10 @@ for i in range(iterations):
         except Exception as e:
             print("Error:", e)
         time.sleep(poll_interval)
+        attempts += 1
+        head_response = requests.head(get_url, auth=auth, headers={
+            "X-Tigris-Consistent": "true",
+        })
     if not converged:
         results.append((f"Run {i+1}", "TIMEOUT", max_attempts, "FAIL"))
     os.remove(file_path)

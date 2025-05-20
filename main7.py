@@ -3,6 +3,7 @@ import requests
 import uuid
 import time
 import os
+import hashlib
 from threading import Thread
 from requests_aws4auth import AWS4Auth
 from tabulate import tabulate
@@ -32,9 +33,12 @@ if bucket not in [b["Name"] for b in s3_client.list_buckets()["Buckets"]]:
 # ---------- Utility ----------
 def put_object(region, url, file_path):
     with open(file_path, "rb") as f:
-        requests.put(url, data=f, auth=auth, headers={
-            "X-Tigris-Regions": region,
-        })
+        try:
+            requests.put(url, data=f, auth=auth, headers={
+                "X-Tigris-Regions": region,
+            })
+        except Exception as e:
+            print(f"Error uploading {file_path} to {region}: {e}")
 # ---------- Results ----------
 results = []
 for i in range(iterations):
@@ -72,7 +76,7 @@ for i in range(iterations):
             sizes = {}
             contents = {}
             for region in regions:
-                r = requests.head(f"{url}?nocache={uuid.uuid4()}", headers={
+                r = requests.get(f"{url}", headers={
                     "X-Tigris-Regions": region,
                 }, auth=auth)
                 if r.status_code == 200:
@@ -81,10 +85,13 @@ for i in range(iterations):
                     sizes[region] = int(r.headers.get("Content-Length", -1))
             if len(etags) == 2 and etags[regions[0]] == etags[regions[1]] and contents[regions[0]] == contents[regions[1]]:
                 winner = None
+                print(etags, sizes)
                 for region in regions:
                     if contents[region] == expected[region]:
                         winner = region
                         break
+                    else:
+                        print(f"Content mismatch in {region}")
                 elapsed = (time.perf_counter() - start) * 1000
                 results.append((f"Run {i+1}", f"{elapsed:.2f} ms", attempts, winner or "Unknown", "PASS"))
                 converged = True

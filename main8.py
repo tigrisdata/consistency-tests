@@ -35,7 +35,7 @@ for i in range(iterations):
     with open(file_path, "wb") as f:
         f.write(os.urandom(file_size_bytes))
     put_url = f"{endpoint}/{bucket}/{object_key}"
-    get_url = f"{put_url}?nocache={uuid.uuid4()}"
+    get_url = f"{put_url}"
     # Step 1: PUT with region
     with open(file_path, "rb") as f:
         put_response = requests.put(put_url, data=f, auth=auth, headers={

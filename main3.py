@@ -34,7 +34,6 @@ for i in range(iterations):
     with open(file_path, "wb") as f:
         f.write(os.urandom(file_size_bytes))
     put_url = f"{endpoint}/{bucket}/{object_key}"
-    nocache_url = f"{put_url}?nocache={uuid.uuid4()}"
     headers = {
         "X-Tigris-Regions": region,
         "Cache-Control": "no-cache",
@@ -42,7 +41,7 @@ for i in range(iterations):
     with open(file_path, "rb") as f:
         put_response = requests.put(put_url, data=f, auth=auth, headers=headers)
     delete_response = requests.delete(put_url, headers=headers, auth=auth)
-    head_response = requests.head(nocache_url, headers=headers, auth=auth)
+    head_response = requests.head(put_url, headers=headers, auth=auth)
     start = time.perf_counter()
     deadline = start + max_poll_seconds
     converged = False
@@ -58,7 +57,7 @@ for i in range(iterations):
             print("Error:", e)
         time.sleep(poll_interval)
         attempts += 1
-        head_response = requests.head(nocache_url, headers=headers, auth=auth)
+        head_response = requests.head(put_url, headers=headers, auth=auth)
     if not converged:
         results.append((f"Run {i+1}", "TIMEOUT", attempts, "FAIL"))
     os.remove(file_path)

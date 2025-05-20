@@ -34,7 +34,6 @@ for i in range(iterations):
     print("Iteration", i + 1)
     object_key = f"overwrite-cross-region-test-{uuid.uuid4()}"
     url = f"{endpoint}/{bucket}/{object_key}"
-    nocache_url = f"{url}?nocache={uuid.uuid4()}"
     # Step 1: Initial PUT to SJC
     file_initial = f"initial-{uuid.uuid4()}.bin"
     with open(file_initial, "wb") as f:
@@ -55,7 +54,7 @@ for i in range(iterations):
     with open(file_overwrite, "rb") as f:
         expected_content = f.read()
     # Step 3: Start polling from global (FRA)
-    head = requests.head(nocache_url, auth=auth)
+    head = requests.head(url, auth=auth)
     start = time.perf_counter()
     deadline = start + max_poll_seconds
     attempts = 0
@@ -68,7 +67,7 @@ for i in range(iterations):
                 elapsed = (time.perf_counter() - start) * 1000
                 results.append((f"Run {i+1}", f"{elapsed:.2f} ms", attempts, "PASS"))
                 converged = True
-                get = requests.get(nocache_url, auth=auth)
+                get = requests.get(url, auth=auth)
                 if get.status_code != 200 or get.content != expected_content:
                     raise Exception("Content mismatch")
                 break
@@ -76,7 +75,7 @@ for i in range(iterations):
             print("Error:", e)
         time.sleep(poll_interval)
         attempts += 1
-        head = requests.head(nocache_url, auth=auth)
+        head = requests.head(url, auth=auth)
     if not converged:
         results.append((f"Run {i+1}", "TIMEOUT", attempts, "FAIL"))
     os.remove(file_initial)

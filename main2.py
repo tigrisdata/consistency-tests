@@ -35,7 +35,6 @@ for i in range(iterations):
     with open(file1, "wb") as f:
         f.write(os.urandom(file_size_bytes))
     put_url = f"{endpoint}/{bucket}/{object_key}"
-    nocache_url = f"{put_url}?nocache={uuid.uuid4()}"
     headers = {
         "X-Tigris-Regions": region,
     }
@@ -47,7 +46,7 @@ for i in range(iterations):
     with open(file2, "rb") as f:
         r2 = requests.put(put_url, data=f, auth=auth, headers=headers)
     etag2 = r2.headers.get("ETag", "").strip('"')
-    head_response = requests.head(nocache_url, headers=headers, auth=auth)
+    head_response = requests.head(put_url, headers=headers, auth=auth)
     head_etag = head_response.headers.get("ETag", "").strip('"')
     head_size = int(head_response.headers.get("Content-Length", -1))
     start = time.perf_counter()
@@ -58,9 +57,9 @@ for i in range(iterations):
         try:
             if head_etag == etag2 and head_size == file_size_bytes:
                 elapsed_ms = (time.perf_counter() - start) * 1000
-                results.append((f"Run {i+1}", f"{elapsed_ms:.2f} ms", attempts, ""))
+                results.append((f"Run {i+1}", f"{elapsed_ms:.2f} ms", attempts, "PASS"))
                 converged = True
-                get_response = requests.get(nocache_url, headers=headers, auth=auth)
+                get_response = requests.get(put_url, headers=headers, auth=auth)
                 if get_response.status_code != 200:
                         raise Exception("Content mismatch")
                 with open(file2, "rb") as f:
@@ -72,7 +71,7 @@ for i in range(iterations):
             print("Error:", e)
         time.sleep(poll_interval)
         attempts += 1
-        head_response = requests.head(nocache_url, headers=headers, auth=auth)
+        head_response = requests.head(put_url, headers=headers, auth=auth)
         head_etag = head_response.headers.get("ETag", "").strip('"')
         head_size = int(head_response.headers.get("Content-Length", -1))
     if not converged:

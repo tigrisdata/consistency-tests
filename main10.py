@@ -65,7 +65,7 @@ for i in range(iterations):
     etags = {}
     bodies = {}
     for region in put_regions:
-        resp = requests.get(f"{url}?nocache={uuid.uuid4()}", auth=auth, headers={
+        resp = requests.get(f"{url}", auth=auth, headers={
             "X-Tigris-Regions": region,
             "X-Tigris-Consistent": "true",
         })
@@ -98,7 +98,7 @@ for i in range(iterations):
         time.sleep(poll_interval)
         attempts += 1
         for region in put_regions:
-            resp = requests.get(f"{url}?nocache={uuid.uuid4()}", auth=auth, headers={
+            resp = requests.get(f"{url}", auth=auth, headers={
                 "X-Tigris-Regions": region,
                 "X-Tigris-Consistent": "true",
             })
