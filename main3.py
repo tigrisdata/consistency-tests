@@ -37,6 +37,7 @@ for i in range(iterations):
     nocache_url = f"{put_url}?nocache={uuid.uuid4()}"
     headers = {
         "X-Tigris-Regions": region,
+        "Cache-Control": "no-cache",
     }
     with open(file_path, "rb") as f:
         put_response = requests.put(put_url, data=f, auth=auth, headers=headers)
