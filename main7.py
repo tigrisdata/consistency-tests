@@ -64,41 +64,50 @@ for i in range(iterations):
     for t in threads:
         t.join()
     # Poll both regions until they converge to same content/etag
+    etags = {}
+    sizes = {}
+    contents = {}
+    for region in regions:
+        r = requests.head(f"{url}", headers={
+            "X-Tigris-Regions": region,
+        }, auth=auth)
+        if r.status_code == 200:
+            etags[region] = r.headers.get("ETag", "").strip('"')
+            sizes[region] = int(r.headers.get("Content-Length", -1))
     start = time.perf_counter()
     deadline = start + max_poll_seconds
     attempts = 0
     converged = False
     while time.perf_counter() < deadline:
-        attempts += 1
         try:
             responses = {}
-            etags = {}
-            sizes = {}
-            contents = {}
-            for region in regions:
-                r = requests.get(f"{url}", headers={
-                    "X-Tigris-Regions": region,
-                }, auth=auth)
-                if r.status_code == 200:
-                    contents[region] = r.content
-                    etags[region] = r.headers.get("ETag", "").strip('"')
-                    sizes[region] = int(r.headers.get("Content-Length", -1))
-            if len(etags) == 2 and etags[regions[0]] == etags[regions[1]] and contents[regions[0]] == contents[regions[1]]:
+            if len(etags) == 2 and etags[regions[0]] == etags[regions[1]]:
+                elapsed = (time.perf_counter() - start) * 1000
+                for region in regions:
+                    r1 = requests.get(f"{url}", headers={
+                        "X-Tigris-Regions": region,
+                    }, auth=auth)
+                    if r1.status_code == 200:
+                        contents[region] = r1.content
                 winner = None
-                print(etags, sizes)
                 for region in regions:
                     if contents[region] == expected[region]:
                         winner = region
                         break
-                    else:
-                        print(f"Content mismatch in {region}")
-                elapsed = (time.perf_counter() - start) * 1000
                 results.append((f"Run {i+1}", f"{elapsed:.2f} ms", attempts, winner or "Unknown", "PASS"))
                 converged = True
                 break
         except Exception as e:
             print("Error:", e)
         time.sleep(poll_interval)
+        attempts += 1
+        for region in regions:
+            r = requests.head(f"{url}", headers={
+                "X-Tigris-Regions": region,
+            }, auth=auth)
+            if r.status_code == 200:
+                etags[region] = r.headers.get("ETag", "").strip('"')
+                sizes[region] = int(r.headers.get("Content-Length", -1))
     if not converged:
         results.append((f"Run {i+1}", "TIMEOUT", attempts, "N/A", "FAIL"))
     for f in files.values():
