@@ -75,7 +75,7 @@ for i in range(iterations):
         head_etag = head_response.headers.get("ETag", "").strip('"')
         head_size = int(head_response.headers.get("Content-Length", -1))
     if not converged:
-        results.append((f"Run {i+1}", "TIMEOUT", attempts, ""))
+        results.append((f"Run {i+1}", "TIMEOUT", attempts, "FAIL"))
     os.remove(file1)
     os.remove(file2)
 headers = ["Iteration", "Convergence Time", "Attempts", "Status"]

@@ -51,7 +51,7 @@ for i in range(iterations):
         try:
             if head_etag == etag and head_size == file_size_bytes:
                 elapsed_ms = (time.perf_counter() - start) * 1000
-                results.append((f"Run {i+1}", f"{elapsed_ms:.2f} ms", attempts, ""))
+                results.append((f"Run {i+1}", f"{elapsed_ms:.2f} ms", attempts, "PASS"))
                 converged = True
                 get_response = requests.get(put_url, headers=headers, auth=auth)
                 if get_response.status_code == 200:
@@ -68,7 +68,7 @@ for i in range(iterations):
         head_etag = head_response.headers.get("ETag", "").strip('"')
         head_size = int(head_response.headers.get("Content-Length", -1))
     if not converged:
-        results.append((f"Run {i+1}", "TIMEOUT", attempts, ""))
+        results.append((f"Run {i+1}", "TIMEOUT", attempts, "FAIL"))
     os.remove(file_path)
 headers = ["Iteration", "Convergence Time", "Attempts", "Status"]
 print(tabulate(results, headers=headers, tablefmt="grid"))
