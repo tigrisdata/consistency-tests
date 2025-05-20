@@ -5,6 +5,7 @@ import time
 import os
 from requests_aws4auth import AWS4Auth
 from tabulate import tabulate
+print("Write Object in Region A and Immediately Read from Region B")
 # ---------- CONFIG ----------
 region_put = "sjc"  # force write to SJC
 endpoint = "https://t3.storage.dev"
@@ -41,8 +42,6 @@ for i in range(iterations):
     # ---------- PUT to Region A (SJC) ----------
     put_headers = {
         "X-Tigris-Regions": region_put,
-        "Cache-Control": "no-cache",
-        "Pragma": "no-cache"
     }
     with open(file_path, "rb") as f:
         put_response = requests.put(put_url, data=f, auth=auth, headers=put_headers)

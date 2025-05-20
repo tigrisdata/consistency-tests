@@ -5,6 +5,7 @@ import time
 import os
 from requests_aws4auth import AWS4Auth
 from tabulate import tabulate
+print("Overwrite object with X-Tigris-Consistent:true in Region A, read with same header in Region B")
 # ---------- CONFIG ----------
 put_region = "sjc"
 get_region = "fra"
@@ -43,8 +44,6 @@ for i in range(iterations):
         put_response = requests.put(put_url, data=f, auth=auth, headers={
             "X-Tigris-Regions": put_region,
             "X-Tigris-Consistent": "true",
-            "Cache-Control": "no-cache",
-            "Pragma": "no-cache"
         })
     expected_etag = put_response.headers.get("ETag", "").strip('"')
     with open(file_path, "rb") as f:
@@ -57,8 +56,6 @@ for i in range(iterations):
             head_response = requests.head(get_url, auth=auth, headers={
                 "X-Tigris-Regions": get_region,
                 "X-Tigris-Consistent": "true",
-                "Cache-Control": "no-cache",
-                "Pragma": "no-cache"
             })
             actual_etag = head_response.headers.get("ETag", "").strip('"')
             if head_response.status_code == 200 and actual_etag == expected_etag:
@@ -68,8 +65,6 @@ for i in range(iterations):
                 get_response = requests.get(get_url, auth=auth, headers={
                     "X-Tigris-Regions": get_region,
                     "X-Tigris-Consistent": "true",
-                    "Cache-Control": "no-cache",
-                    "Pragma": "no-cache"
                 })
                 actual_etag = get_response.headers.get("ETag", "").strip('"')
                 if get_response.status_code != 200 or actual_etag != expected_etag or get_response.content != expected_content:

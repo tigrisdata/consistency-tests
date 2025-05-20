@@ -5,6 +5,7 @@ import time
 import os
 from requests_aws4auth import AWS4Auth
 from tabulate import tabulate
+print("Write and read object in same region using X-Tigris-Consistent:true header")
 # ---------- CONFIG ----------
 region = "fra"
 endpoint = "https://t3.storage.dev"
@@ -40,8 +41,6 @@ for i in range(iterations):
         put_response = requests.put(put_url, data=f, auth=auth, headers={
             "X-Tigris-Regions": region,
             "X-Tigris-Consistent": "true",
-            "Cache-Control": "no-cache",
-            "Pragma": "no-cache"
         })
     expected_etag = put_response.headers.get("ETag", "").strip('"')
     # Step 2: GET with x-tigris-consistent:true
@@ -51,8 +50,6 @@ for i in range(iterations):
         head_response = requests.head(get_url, auth=auth, headers={
             "X-Tigris-Regions": region,
             "X-Tigris-Consistent": "true",
-            "Cache-Control": "no-cache",
-            "Pragma": "no-cache"
         })
         actual_etag = head_response.headers.get("ETag", "").strip('"')
         if head_response.status_code == 200 and actual_etag == expected_etag:
@@ -60,8 +57,6 @@ for i in range(iterations):
             get_response = requests.get(get_url, auth=auth, headers={
                 "X-Tigris-Regions": region,
                 "X-Tigris-Consistent": "true",
-                "Cache-Control": "no-cache",
-                "Pragma": "no-cache"
             })
             body = get_response.content
             if get_response.status_code != 200 or actual_etag != expected_etag or body != expected_content:

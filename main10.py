@@ -6,6 +6,7 @@ import os
 from threading import Thread
 from requests_aws4auth import AWS4Auth
 from tabulate import tabulate
+print("Simultaneous writes from two regions using consistency header X-Tigris-Consistent:true")
 # ---------- CONFIG ----------
 endpoint = "https://t3.storage.dev"
 bucket = os.getenv("BUCKET", "tigris-consistency-test-bucket")
@@ -34,8 +35,6 @@ def put_object(region, file_path, url):
         requests.put(url, data=f, auth=auth, headers={
             "X-Tigris-Regions": region,
             "X-Tigris-Consistent": "true",
-            "Cache-Control": "no-cache",
-            "Pragma": "no-cache"
         })
 # ---------- Results ----------
 results = []
@@ -69,8 +68,6 @@ for i in range(iterations):
         resp = requests.get(f"{url}?nocache={uuid.uuid4()}", auth=auth, headers={
             "X-Tigris-Regions": region,
             "X-Tigris-Consistent": "true",
-            "Cache-Control": "no-cache",
-            "Pragma": "no-cache"
         })
         if resp.status_code == 200:
             etags[region] = resp.headers.get("ETag", "").strip('"')
@@ -104,8 +101,6 @@ for i in range(iterations):
             resp = requests.get(f"{url}?nocache={uuid.uuid4()}", auth=auth, headers={
                 "X-Tigris-Regions": region,
                 "X-Tigris-Consistent": "true",
-                "Cache-Control": "no-cache",
-                "Pragma": "no-cache"
             })
             if resp.status_code == 200:
                 etags[region] = resp.headers.get("ETag", "").strip('"')

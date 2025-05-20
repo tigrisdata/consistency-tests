@@ -5,6 +5,7 @@ import time
 import os
 from requests_aws4auth import AWS4Auth
 from tabulate import tabulate
+print("Write and immediately read the same object in the same region")
 region = "sjc"
 endpoint = "https://t3.storage.dev"
 bucket = os.getenv("BUCKET", "tigris-consistency-test-bucket")
@@ -36,8 +37,6 @@ for i in range(iterations):
     nocache_url = f"{put_url}?nocache={uuid.uuid4()}"
     headers = {
         "X-Tigris-Regions": region,
-        "Cache-Control": "no-cache",
-        "Pragma": "no-cache"
     }
     with open(file_path, "rb") as f:
         put_response = requests.put(put_url, data=f, auth=auth, headers=headers)

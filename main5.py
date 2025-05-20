@@ -5,6 +5,7 @@ import time
 import os
 from tabulate import tabulate
 from requests_aws4auth import AWS4Auth
+print("Overwrite Object in Region A and Read from Region B")
 # ---------- CONFIG ----------
 region_put = "sjc"
 endpoint = "https://t3.storage.dev"
@@ -41,8 +42,6 @@ for i in range(iterations):
     with open(file_initial, "rb") as f:
         requests.put(url, data=f, auth=auth, headers={
             "X-Tigris-Regions": region_put,
-            "Cache-Control": "no-cache",
-            "Pragma": "no-cache"
         })
     # Step 2: Overwrite to SJC
     file_overwrite = f"overwrite-{uuid.uuid4()}.bin"
@@ -51,8 +50,6 @@ for i in range(iterations):
     with open(file_overwrite, "rb") as f:
         resp = requests.put(url, data=f, auth=auth, headers={
             "X-Tigris-Regions": region_put,
-            "Cache-Control": "no-cache",
-            "Pragma": "no-cache"
         })
     expected_etag = resp.headers.get("ETag", "").strip('"')
     with open(file_overwrite, "rb") as f:

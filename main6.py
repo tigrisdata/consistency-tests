@@ -5,6 +5,7 @@ import time
 import os
 from requests_aws4auth import AWS4Auth
 from tabulate import tabulate
+print("Delete Object in Region A and Read from Region B")
 # ---------- CONFIG ----------
 region_put = "sjc"  # region to PUT and DELETE from
 endpoint = "https://t3.storage.dev"
@@ -41,7 +42,6 @@ for i in range(iterations):
     put_headers = {
         "X-Tigris-Regions": region_put,
         "Cache-Control": "no-cache",
-        "Pragma": "no-cache"
     }
     with open(file_path, "rb") as f:
         put_resp = requests.put(url, data=f, auth=auth, headers=put_headers)

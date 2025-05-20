@@ -6,6 +6,7 @@ import os
 from threading import Thread
 from requests_aws4auth import AWS4Auth
 from tabulate import tabulate
+print("Concurrent PUTs to the Same Object from Two Regions")
 # ---------- CONFIG ----------
 endpoint = "https://t3.storage.dev"
 bucket = os.getenv("BUCKET", "tigris-consistency-test-bucket")
@@ -33,8 +34,6 @@ def put_object(region, url, file_path):
     with open(file_path, "rb") as f:
         requests.put(url, data=f, auth=auth, headers={
             "X-Tigris-Regions": region,
-            "Cache-Control": "no-cache",
-            "Pragma": "no-cache"
         })
 # ---------- Results ----------
 results = []
@@ -75,8 +74,6 @@ for i in range(iterations):
             for region in regions:
                 r = requests.head(f"{url}?nocache={uuid.uuid4()}", headers={
                     "X-Tigris-Regions": region,
-                    "Cache-Control": "no-cache",
-                    "Pragma": "no-cache"
                 }, auth=auth)
                 if r.status_code == 200:
                     contents[region] = r.content
