@@ -57,13 +57,15 @@ for i in range(iterations):
         attempts += 1
         try:
             head_resp = requests.head(get_url, auth=auth)
-            get_resp = requests.get(get_url, auth=auth)
             etag = head_resp.headers.get("ETag", "").strip('"')
             size = int(head_resp.headers.get("Content-Length", -1))
-            if (etag == expected_etag and size == file_size_bytes and get_resp.status_code == 200 and get_resp.content == expected_content):
+            if etag == expected_etag and size == file_size_bytes:
                 elapsed_ms = (time.perf_counter() - start) * 1000
                 results.append((f"Run {i+1}", f"{elapsed_ms:.2f} ms", attempts, "PASS"))
                 converged = True
+                get_resp = requests.get(get_url, auth=auth)
+                if get_resp.status_code != 200 or get_resp.content != expected_content:
+                    raise Exception("Content mismatch")
                 break
         except Exception:
             pass

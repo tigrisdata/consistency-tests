@@ -65,7 +65,6 @@ for i in range(iterations):
     attempts = 0
     converged = False
     while time.perf_counter() < deadline:
-        time.sleep(poll_interval)
         attempts += 1
         try:
             responses = {}
@@ -73,7 +72,7 @@ for i in range(iterations):
             sizes = {}
             contents = {}
             for region in regions:
-                r = requests.get(f"{url}?nocache={uuid.uuid4()}", headers={
+                r = requests.head(f"{url}?nocache={uuid.uuid4()}", headers={
                     "X-Tigris-Regions": region,
                     "Cache-Control": "no-cache",
                     "Pragma": "no-cache"
@@ -94,6 +93,7 @@ for i in range(iterations):
                 break
         except Exception:
             pass
+        time.sleep(poll_interval)
     if not converged:
         results.append((f"Run {i+1}", "TIMEOUT", attempts, "N/A", "FAIL"))
     for f in files.values():

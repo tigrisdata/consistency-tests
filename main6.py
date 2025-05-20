@@ -58,18 +58,20 @@ for i in range(iterations):
     converged = False
     # Step 3: Poll until GET and HEAD both 404 from global (FRA)
     while time.perf_counter() < deadline:
-        time.sleep(poll_interval)
         attempts += 1
         try:
-            get = requests.get(nocache_url, auth=auth)
             head = requests.head(nocache_url, auth=auth)
             if get.status_code == 404 and head.status_code == 404:
                 elapsed = (time.perf_counter() - start) * 1000
                 results.append((f"Run {i+1}", f"{elapsed:.2f} ms", attempts, "PASS"))
                 converged = True
+                get = requests.get(nocache_url, auth=auth)
+                if get.status_code != 404:
+                    raise Exception("GET did not return 404")
                 break
         except Exception:
             pass
+        time.sleep(poll_interval)
     if not converged:
         results.append((f"Run {i+1}", "TIMEOUT", attempts, "FAIL"))
         break

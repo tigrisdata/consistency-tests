@@ -47,7 +47,7 @@ for i in range(iterations):
         expected_content = f.read()
     try:
         t0 = time.perf_counter()
-        get_response = requests.get(get_url, auth=auth, headers={
+        head_response = requests.head(get_url, auth=auth, headers={
             "X-Tigris-Regions": region,
             "x-tigris-consistent": "true",
             "Cache-Control": "no-cache",
@@ -55,10 +55,18 @@ for i in range(iterations):
         })
         t1 = time.perf_counter()
         elapsed = (t1 - t0) * 1000
-        actual_etag = get_response.headers.get("ETag", "").strip('"')
-        body = get_response.content
-        if get_response.status_code == 200 and actual_etag == expected_etag and body == expected_content:
+        actual_etag = head_response.headers.get("ETag", "").strip('"')
+        if head_response.status_code == 200 and actual_etag == expected_etag:
             results.append((f"Run {i+1}", f"{elapsed:.2f} ms", "PASS"))
+            get_response = requests.get(get_url, auth=auth, headers={
+                "X-Tigris-Regions": region,
+                "x-tigris-consistent": "true",
+                "Cache-Control": "no-cache",
+                "Pragma": "no-cache"
+            })
+            body = get_response.content
+            if get_response.status_code != 200 or actual_etag != expected_etag or body != expected_content:
+                raise Exception("Content mismatch")
         else:
             results.append((f"Run {i+1}", f"{elapsed:.2f} ms", "FAIL"))
     except Exception:

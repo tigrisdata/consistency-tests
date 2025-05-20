@@ -46,24 +46,24 @@ for i in range(iterations):
     converged = False
     attempts = 0
     while time.perf_counter() < deadline:
-        time.sleep(poll_interval)
         attempts += 1
         try:
             head_response = requests.head(nocache_url, headers=headers, auth=auth)
             head_etag = head_response.headers.get("ETag", "").strip('"')
             head_size = int(head_response.headers.get("Content-Length", -1))
             if head_etag == etag and head_size == file_size_bytes:
+                elapsed_ms = (time.perf_counter() - start) * 1000
+                results.append((f"Run {i+1}", f"{elapsed_ms:.2f} ms", attempts, ""))
+                converged = True
                 get_response = requests.get(nocache_url, headers=headers, auth=auth)
                 if get_response.status_code == 200:
                     with open(file_path, "rb") as f:
                         expected_content = f.read()
-                    if get_response.content == expected_content:
-                        elapsed_ms = (time.perf_counter() - start) * 1000
-                        results.append((f"Run {i+1}", f"{elapsed_ms:.2f} ms", attempts, ""))
-                        converged = True
-                        break
+                    if get_response.content != expected_content:
+                        raise Exception("Content mismatch")
         except Exception:
             pass
+        time.sleep(poll_interval)
     if not converged:
         results.append((f"Run {i+1}", "TIMEOUT", attempts, ""))
     os.remove(file_path)

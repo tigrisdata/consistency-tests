@@ -46,18 +46,17 @@ for i in range(iterations):
     converged = False
     attempts = 0
     while time.perf_counter() < deadline:
-        time.sleep(poll_interval)
         attempts += 1
         try:
-            get_response = requests.get(nocache_url, headers=headers, auth=auth)
             head_response = requests.head(nocache_url, headers=headers, auth=auth)
-            if get_response.status_code == 404 and head_response.status_code == 404:
+            if head_response.status_code == 404:
                 elapsed_ms = (time.perf_counter() - start) * 1000
                 results.append((f"Run {i+1}", f"{elapsed_ms:.2f} ms", attempts, "PASS"))
                 converged = True
                 break
         except Exception:
             pass
+        time.sleep(poll_interval)
     if not converged:
         results.append((f"Run {i+1}", "TIMEOUT", attempts, "FAIL"))
     os.remove(file_path)

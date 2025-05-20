@@ -66,7 +66,6 @@ for i in range(iterations):
     deadline = start + max_poll_seconds
     attempts = 0
     while time.perf_counter() < deadline:
-        time.sleep(poll_interval)
         attempts += 1
         try:
             res = {}
@@ -99,6 +98,7 @@ for i in range(iterations):
                 break
         except Exception:
             pass
+        time.sleep(poll_interval)
     if not converged:
         results.append((f"Run {i+1}", "TIMEOUT", attempts, "N/A", "FAIL"))
     # Cleanup temp files
