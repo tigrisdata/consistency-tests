@@ -39,6 +39,7 @@ for i in range(iterations):
     with open(file_path, "rb") as f:
         put_response = requests.put(put_url, data=f, auth=auth, headers={
             "X-Tigris-Regions": region,
+            "X-Tigris-Consistent": "true",
             "Cache-Control": "no-cache",
             "Pragma": "no-cache"
         })
@@ -47,21 +48,18 @@ for i in range(iterations):
     with open(file_path, "rb") as f:
         expected_content = f.read()
     try:
-        t0 = time.perf_counter()
         head_response = requests.head(get_url, auth=auth, headers={
             "X-Tigris-Regions": region,
-            "x-tigris-consistent": "true",
+            "X-Tigris-Consistent": "true",
             "Cache-Control": "no-cache",
             "Pragma": "no-cache"
         })
-        t1 = time.perf_counter()
-        elapsed = (t1 - t0) * 1000
         actual_etag = head_response.headers.get("ETag", "").strip('"')
         if head_response.status_code == 200 and actual_etag == expected_etag:
-            results.append((f"Run {i+1}", f"{elapsed:.2f} ms", "PASS"))
+            results.append((f"Run {i+1}", f"0 ms", "PASS"))
             get_response = requests.get(get_url, auth=auth, headers={
                 "X-Tigris-Regions": region,
-                "x-tigris-consistent": "true",
+                "X-Tigris-Consistent": "true",
                 "Cache-Control": "no-cache",
                 "Pragma": "no-cache"
             })

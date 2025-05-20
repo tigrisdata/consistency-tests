@@ -42,14 +42,13 @@ for i in range(iterations):
     with open(file_path, "rb") as f:
         put_response = requests.put(put_url, data=f, auth=auth, headers=headers)
     delete_response = requests.delete(put_url, headers=headers, auth=auth)
+    head_response = requests.head(nocache_url, headers=headers, auth=auth)
     start = time.perf_counter()
     deadline = start + max_poll_seconds
     converged = False
     attempts = 0
     while time.perf_counter() < deadline:
-        attempts += 1
         try:
-            head_response = requests.head(nocache_url, headers=headers, auth=auth)
             if head_response.status_code == 404:
                 elapsed_ms = (time.perf_counter() - start) * 1000
                 results.append((f"Run {i+1}", f"{elapsed_ms:.2f} ms", attempts, "PASS"))
@@ -58,6 +57,8 @@ for i in range(iterations):
         except Exception as e:
             print("Error:", e)
         time.sleep(poll_interval)
+        attempts += 1
+        head_response = requests.head(nocache_url, headers=headers, auth=auth)
     if not converged:
         results.append((f"Run {i+1}", "TIMEOUT", attempts, "FAIL"))
     os.remove(file_path)

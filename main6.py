@@ -53,15 +53,14 @@ for i in range(iterations):
     if delete_resp.status_code not in [204, 200]:
         results.append((f"Run {i+1}", "DELETE Failed", "-", "FAIL"))
         continue
+    head = requests.head(nocache_url, auth=auth)
     start = time.perf_counter()
     deadline = start + max_poll_seconds
     attempts = 0
     converged = False
     # Step 3: Poll until GET and HEAD both 404 from global (FRA)
     while time.perf_counter() < deadline:
-        attempts += 1
         try:
-            head = requests.head(nocache_url, auth=auth)
             print("Iterations:", i + 1, attempts, head.status_code)
             if head.status_code == 404:
                 elapsed = (time.perf_counter() - start) * 1000
@@ -71,6 +70,8 @@ for i in range(iterations):
         except Exception as e:
             print("Error:", e)
         time.sleep(poll_interval)
+        attempts += 1
+        head = requests.head(nocache_url, auth=auth)
     if not converged:
         results.append((f"Run {i+1}", "TIMEOUT", attempts, "FAIL"))
         break

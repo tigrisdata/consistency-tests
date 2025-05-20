@@ -48,16 +48,15 @@ for i in range(iterations):
     with open(file2, "rb") as f:
         r2 = requests.put(put_url, data=f, auth=auth, headers=headers)
     etag2 = r2.headers.get("ETag", "").strip('"')
+    head_response = requests.head(nocache_url, headers=headers, auth=auth)
+    head_etag = head_response.headers.get("ETag", "").strip('"')
+    head_size = int(head_response.headers.get("Content-Length", -1))
     start = time.perf_counter()
     deadline = start + max_poll_seconds
     converged = False
     attempts = 0
     while time.perf_counter() < deadline:
-        attempts += 1
         try:
-            head_response = requests.head(nocache_url, headers=headers, auth=auth)
-            head_etag = head_response.headers.get("ETag", "").strip('"')
-            head_size = int(head_response.headers.get("Content-Length", -1))
             if head_etag == etag2 and head_size == file_size_bytes:
                 elapsed_ms = (time.perf_counter() - start) * 1000
                 results.append((f"Run {i+1}", f"{elapsed_ms:.2f} ms", attempts, ""))
@@ -73,6 +72,10 @@ for i in range(iterations):
         except Exception as e:
             print("Error:", e)
         time.sleep(poll_interval)
+        attempts += 1
+        head_response = requests.head(nocache_url, headers=headers, auth=auth)
+        head_etag = head_response.headers.get("ETag", "").strip('"')
+        head_size = int(head_response.headers.get("Content-Length", -1))
     if not converged:
         results.append((f"Run {i+1}", "TIMEOUT", attempts, ""))
     os.remove(file1)

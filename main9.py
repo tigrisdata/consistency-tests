@@ -42,6 +42,7 @@ for i in range(iterations):
     with open(file_path, "rb") as f:
         put_response = requests.put(put_url, data=f, auth=auth, headers={
             "X-Tigris-Regions": put_region,
+            "X-Tigris-Consistent": "true",
             "Cache-Control": "no-cache",
             "Pragma": "no-cache"
         })
@@ -55,7 +56,7 @@ for i in range(iterations):
         try:
             head_response = requests.head(get_url, auth=auth, headers={
                 "X-Tigris-Regions": get_region,
-                "x-tigris-consistent": "true",
+                "X-Tigris-Consistent": "true",
                 "Cache-Control": "no-cache",
                 "Pragma": "no-cache"
             })
@@ -66,7 +67,7 @@ for i in range(iterations):
                 converged = True
                 get_response = requests.get(get_url, auth=auth, headers={
                     "X-Tigris-Regions": get_region,
-                    "x-tigris-consistent": "true",
+                    "X-Tigris-Consistent": "true",
                     "Cache-Control": "no-cache",
                     "Pragma": "no-cache"
                 })

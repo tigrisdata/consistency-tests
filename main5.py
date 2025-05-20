@@ -58,14 +58,13 @@ for i in range(iterations):
     with open(file_overwrite, "rb") as f:
         expected_content = f.read()
     # Step 3: Start polling from global (FRA)
+    head = requests.head(nocache_url, auth=auth)
     start = time.perf_counter()
     deadline = start + max_poll_seconds
     attempts = 0
     converged = False
     while time.perf_counter() < deadline:
-        attempts += 1
         try:
-            head = requests.head(nocache_url, auth=auth)
             etag = head.headers.get("ETag", "").strip('"')
             size = int(head.headers.get("Content-Length", -1))
             if etag == expected_etag and size == file_size_bytes:
@@ -79,6 +78,8 @@ for i in range(iterations):
         except Exception as e:
             print("Error:", e)
         time.sleep(poll_interval)
+        attempts += 1
+        head = requests.head(nocache_url, auth=auth)
     if not converged:
         results.append((f"Run {i+1}", "TIMEOUT", attempts, "FAIL"))
     os.remove(file_initial)

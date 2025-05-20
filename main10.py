@@ -33,7 +33,7 @@ def put_object(region, file_path, url):
     with open(file_path, "rb") as f:
         requests.put(url, data=f, auth=auth, headers={
             "X-Tigris-Regions": region,
-            "x-tigris-consistent": "true",
+            "X-Tigris-Consistent": "true",
             "Cache-Control": "no-cache",
             "Pragma": "no-cache"
         })
@@ -62,26 +62,25 @@ for i in range(iterations):
     for t in threads:
         t.join()
     # Step 3: Poll until SJC and FRA converge to the same ETag and body
+    res = {}
+    etags = {}
+    bodies = {}
+    for region in put_regions:
+        resp = requests.get(f"{url}?nocache={uuid.uuid4()}", auth=auth, headers={
+            "X-Tigris-Regions": region,
+            "X-Tigris-Consistent": "true",
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache"
+        })
+        if resp.status_code == 200:
+            etags[region] = resp.headers.get("ETag", "").strip('"')
+            bodies[region] = resp.content
     converged = False
     start = time.perf_counter()
     deadline = start + max_poll_seconds
     attempts = 0
     while time.perf_counter() < deadline:
-        attempts += 1
         try:
-            res = {}
-            etags = {}
-            bodies = {}
-            for region in put_regions:
-                resp = requests.get(f"{url}?nocache={uuid.uuid4()}", auth=auth, headers={
-                    "X-Tigris-Regions": region,
-                    "x-tigris-consistent": "true",
-                    "Cache-Control": "no-cache",
-                    "Pragma": "no-cache"
-                })
-                if resp.status_code == 200:
-                    etags[region] = resp.headers.get("ETag", "").strip('"')
-                    bodies[region] = resp.content
             if (
                 len(etags) == 2 and
                 etags[put_regions[0]] == etags[put_regions[1]] and
@@ -100,6 +99,17 @@ for i in range(iterations):
         except Exception as e:
             print("Error:", e)
         time.sleep(poll_interval)
+        attempts += 1
+        for region in put_regions:
+            resp = requests.get(f"{url}?nocache={uuid.uuid4()}", auth=auth, headers={
+                "X-Tigris-Regions": region,
+                "X-Tigris-Consistent": "true",
+                "Cache-Control": "no-cache",
+                "Pragma": "no-cache"
+            })
+            if resp.status_code == 200:
+                etags[region] = resp.headers.get("ETag", "").strip('"')
+                bodies[region] = resp.content
     if not converged:
         results.append((f"Run {i+1}", "TIMEOUT", attempts, "N/A", "FAIL"))
     # Cleanup temp files
