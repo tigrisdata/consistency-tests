@@ -7,7 +7,7 @@ from requests_aws4auth import AWS4Auth
 from tabulate import tabulate
 region = "fra"
 endpoint = "https://t3.storage.dev"
-bucket = "tigris-consistency-test-bucket"
+bucket = os.getenv("BUCKET", "tigris-consistency-test-bucket")
 poll_interval = 0.1  # 100ms
 max_poll_seconds = 1
 iterations = 10
@@ -27,6 +27,7 @@ if bucket not in existing_buckets:
     s3_client.create_bucket(Bucket=bucket)
 results = []
 for i in range(iterations):
+    print("Iteration", i + 1)
     object_key = f"delete-test-{uuid.uuid4()}"
     file_path = f"upload-{uuid.uuid4()}.bin"
     with open(file_path, "wb") as f:
@@ -54,8 +55,8 @@ for i in range(iterations):
                 results.append((f"Run {i+1}", f"{elapsed_ms:.2f} ms", attempts, "PASS"))
                 converged = True
                 break
-        except Exception:
-            pass
+        except Exception as e:
+            print("Error:", e)
         time.sleep(poll_interval)
     if not converged:
         results.append((f"Run {i+1}", "TIMEOUT", attempts, "FAIL"))

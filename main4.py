@@ -8,7 +8,7 @@ from tabulate import tabulate
 # ---------- CONFIG ----------
 region_put = "sjc"  # force write to SJC
 endpoint = "https://t3.storage.dev"
-bucket = "tigris-consistency-test-bucket"
+bucket = os.getenv("BUCKET", "tigris-consistency-test-bucket")
 poll_interval = 0.1  # 100ms
 max_poll_seconds = 60
 iterations = 10
@@ -31,6 +31,7 @@ if bucket not in existing_buckets:
 # ---------- Results ----------
 results = []
 for i in range(iterations):
+    print("Iteration", i + 1)
     object_key = f"global-replication-test-{uuid.uuid4()}"
     file_path = f"put-{uuid.uuid4()}.bin"
     with open(file_path, "wb") as f:
@@ -67,6 +68,12 @@ for i in range(iterations):
                 if get_resp.status_code != 200 or get_resp.content != expected_content:
                     raise Exception("Content mismatch")
                 break
-        except Exception:
-            pass
+        except Exception as e:
+            print("Error:", e)
         time.sleep(poll_interval)
+    if not converged:
+        results.append((f"Run {i+1}", "TIMEOUT", attempts, "FAIL"))
+    os.remove(file_path)
+# ---------- Output Table ----------
+headers = ["Iteration", "Convergence Time", "Attempts", "Status"]
+print(tabulate(results, headers=headers, tablefmt="grid"))

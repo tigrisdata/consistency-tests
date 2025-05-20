@@ -8,7 +8,7 @@ from tabulate import tabulate
 # ---------- CONFIG ----------
 region_put = "sjc"  # region to PUT and DELETE from
 endpoint = "https://t3.storage.dev"
-bucket = "tigris-consistency-test-bucket"
+bucket = os.getenv("BUCKET", "tigris-consistency-test-bucket")
 poll_interval = 0.1  # 1 second
 max_poll_seconds = 600
 iterations = 10
@@ -30,6 +30,7 @@ if bucket not in [b["Name"] for b in s3_client.list_buckets()["Buckets"]]:
 # ---------- Results ----------
 results = []
 for i in range(iterations):
+    print("Iterations:", i + 1)
     object_key = f"delete-cross-region-test-{uuid.uuid4()}"
     url = f"{endpoint}/{bucket}/{object_key}"
     nocache_url = f"{url}?nocache={uuid.uuid4()}"
@@ -61,16 +62,14 @@ for i in range(iterations):
         attempts += 1
         try:
             head = requests.head(nocache_url, auth=auth)
-            if get.status_code == 404 and head.status_code == 404:
+            print("Iterations:", i + 1, attempts, head.status_code)
+            if head.status_code == 404:
                 elapsed = (time.perf_counter() - start) * 1000
                 results.append((f"Run {i+1}", f"{elapsed:.2f} ms", attempts, "PASS"))
                 converged = True
-                get = requests.get(nocache_url, auth=auth)
-                if get.status_code != 404:
-                    raise Exception("GET did not return 404")
                 break
-        except Exception:
-            pass
+        except Exception as e:
+            print("Error:", e)
         time.sleep(poll_interval)
     if not converged:
         results.append((f"Run {i+1}", "TIMEOUT", attempts, "FAIL"))

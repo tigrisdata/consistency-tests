@@ -8,7 +8,7 @@ from requests_aws4auth import AWS4Auth
 from tabulate import tabulate
 # ---------- CONFIG ----------
 endpoint = "https://t3.storage.dev"
-bucket = "tigris-consistency-test-bucket"
+bucket = os.getenv("BUCKET", "tigris-consistency-test-bucket")
 put_regions = ["sjc", "fra"]
 file_size_bytes = 1024 * 1024
 iterations = 10
@@ -40,6 +40,7 @@ def put_object(region, file_path, url):
 # ---------- Results ----------
 results = []
 for i in range(iterations):
+    print("Iteration", i + 1)
     object_key = f"concurrent-consistent-write-{uuid.uuid4()}"
     url = f"{endpoint}/{bucket}/{object_key}"
     files = {}
@@ -96,8 +97,8 @@ for i in range(iterations):
                 results.append((f"Run {i+1}", f"{elapsed:.2f} ms", attempts, winner or "Unknown", "PASS"))
                 converged = True
                 break
-        except Exception:
-            pass
+        except Exception as e:
+            print("Error:", e)
         time.sleep(poll_interval)
     if not converged:
         results.append((f"Run {i+1}", "TIMEOUT", attempts, "N/A", "FAIL"))

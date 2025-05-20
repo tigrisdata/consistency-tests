@@ -9,7 +9,7 @@ from tabulate import tabulate
 put_region = "sjc"
 get_region = "fra"
 endpoint = "https://t3.storage.dev"
-bucket = "tigris-consistency-test-bucket"
+bucket = os.getenv("BUCKET", "tigris-consistency-test-bucket")
 iterations = 10
 file_size_bytes = 1024 * 1024
 max_attempts = 60
@@ -31,6 +31,7 @@ if bucket not in [b["Name"] for b in s3_client.list_buckets()["Buckets"]]:
 # ---------- Results ----------
 results = []
 for i in range(iterations):
+    print("Iteration", i + 1)
     object_key = f"overwrite-consistent-cross-region-{uuid.uuid4()}"
     file_path = f"data-{uuid.uuid4()}.bin"
     with open(file_path, "wb") as f:
@@ -73,8 +74,8 @@ for i in range(iterations):
                 if get_response.status_code != 200 or actual_etag != expected_etag or get_response.content != expected_content:
                     raise Exception("Content mismatch")
                 break
-        except Exception:
-            pass
+        except Exception as e:
+            print("Error:", e)
         time.sleep(poll_interval)
     if not converged:
         results.append((f"Run {i+1}", "TIMEOUT", max_attempts, "FAIL"))

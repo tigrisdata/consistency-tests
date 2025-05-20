@@ -8,7 +8,7 @@ from tabulate import tabulate
 # ---------- CONFIG ----------
 region = "fra"
 endpoint = "https://t3.storage.dev"
-bucket = "tigris-consistency-test-bucket"
+bucket = os.getenv("BUCKET", "tigris-consistency-test-bucket")
 iterations = 10
 file_size_bytes = 1024 * 1024
 # ---------- AUTH ----------
@@ -28,6 +28,7 @@ if bucket not in [b["Name"] for b in s3_client.list_buckets()["Buckets"]]:
 # ---------- Results ----------
 results = []
 for i in range(iterations):
+    print("Iterations:", i + 1)
     object_key = f"strict-consistency-test-{uuid.uuid4()}"
     file_path = f"data-{uuid.uuid4()}.bin"
     with open(file_path, "wb") as f:

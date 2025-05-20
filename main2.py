@@ -7,7 +7,7 @@ from requests_aws4auth import AWS4Auth
 from tabulate import tabulate
 region = "sjc"
 endpoint = "https://t3.storage.dev"
-bucket = "tigris-consistency-test-bucket"
+bucket = os.getenv("BUCKET", "tigris-consistency-test-bucket")
 poll_interval = 0.1
 max_poll_seconds = 5
 iterations = 10
@@ -27,6 +27,7 @@ if bucket not in existing_buckets:
     s3_client.create_bucket(Bucket=bucket)
 results = []
 for i in range(iterations):
+    print("Iteration", i + 1)
     object_key = f"overwrite-test-{uuid.uuid4()}"
     file1 = f"original-{uuid.uuid4()}.bin"
     file2 = f"overwrite-{uuid.uuid4()}.bin"
@@ -62,14 +63,15 @@ for i in range(iterations):
                 results.append((f"Run {i+1}", f"{elapsed_ms:.2f} ms", attempts, ""))
                 converged = True
                 get_response = requests.get(nocache_url, headers=headers, auth=auth)
-                if get_response.status_code == 200:
-                    with open(file2, "rb") as f:
-                        expected_content = f.read()
-                    if get_response.content != expected_content:
+                if get_response.status_code != 200:
                         raise Exception("Content mismatch")
-                    break
-        except Exception:
-            pass
+                with open(file2, "rb") as f:
+                    expected_content = f.read()
+                if get_response.content != expected_content:
+                    raise Exception("Content mismatch")
+                break
+        except Exception as e:
+            print("Error:", e)
         time.sleep(poll_interval)
     if not converged:
         results.append((f"Run {i+1}", "TIMEOUT", attempts, ""))
