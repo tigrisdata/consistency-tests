@@ -36,7 +36,6 @@ for i in range(iterations):
     put_url = f"{endpoint}/{bucket}/{object_key}"
     headers = {
         "X-Tigris-Regions": region,
-        "Cache-Control": "no-cache",
     }
     with open(file_path, "rb") as f:
         put_response = requests.put(put_url, data=f, auth=auth, headers=headers)

@@ -40,7 +40,6 @@ for i in range(iterations):
         f.write(os.urandom(file_size_bytes))
     put_headers = {
         "X-Tigris-Regions": region_put,
-        "Cache-Control": "no-cache",
     }
     with open(file_path, "rb") as f:
         put_resp = requests.put(url, data=f, auth=auth, headers=put_headers)
